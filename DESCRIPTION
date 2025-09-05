@@ -1,5 +1,5 @@
 Package: fluxr
-Title: Fit two-station stream metabolism using Bayesian inverse modeling in Stan
+Title: Use Bayesian inverse modeling in Stan to estimate two-station stream metabolism from O2 data or denitrification & N2 fixation from N2 data
 Version: 0.0.1
 Authors@R: 
     person("Michelle", "Kelly", , "mckelly1@mtu.edu", role = c("aut", "cre"),
