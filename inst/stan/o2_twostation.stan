@@ -1,0 +1,26 @@
+// This Stan program defines a two-station O2 model, 
+// as written by Nifong et al. ... and available
+// at github.com/rlnifong/Denitrification/
+// within insst/executables/nn2_model.stan
+data {
+  // initialize structure of new variables
+  int<lower=0> mod;
+  int<lower=1> nobs;
+  int<lower=1> ncol;
+  vector[N] y;
+}
+
+// The parameters accepted by the model. Our model
+// accepts two parameters 'mu' and 'sigma'.
+parameters {
+  real mu;
+  real<lower=0> sigma;
+}
+
+// The model to be estimated. We model the output
+// 'y' to be normally distributed with mean 'mu'
+// and standard deviation 'sigma'.
+model {
+  y ~ normal(mu, sigma);
+}
+

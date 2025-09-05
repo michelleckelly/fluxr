@@ -1,0 +1,28 @@
+Package: fluxr
+Title: Fit two-station stream metabolism using Bayesian inverse modeling in Stan
+Version: 0.0.1
+Authors@R: 
+    person("Michelle", "Kelly", , "mckelly1@mtu.edu", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0003-0123-2527"))
+Description: fluxr uses Bayesian inverse modeling to fit two-station stream metabolism models to dissolved oxygen, temperature, light, and depth data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Biarch: true
+Depends: 
+    R (>= 3.4.0)
+Imports: 
+    methods,
+    Rcpp (>= 0.12.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    rstantools (>= 2.5.0)
+LinkingTo: 
+    BH (>= 1.66.0),
+    Rcpp (>= 0.12.0),
+    RcppEigen (>= 0.3.3.3.0),
+    RcppParallel (>= 5.0.1),
+    rstan (>= 2.18.1),
+    StanHeaders (>= 2.18.0)
+SystemRequirements: GNU make
