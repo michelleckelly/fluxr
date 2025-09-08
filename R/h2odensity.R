@@ -8,8 +8,6 @@
 #'
 #'
 #' @export
-#'
-#' @examples
 h2odensity <- function(temp){
 
   # Fit coefficients and equation from Tanaka et al 2001
