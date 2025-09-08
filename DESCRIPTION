@@ -7,6 +7,7 @@ Authors@R:
 Description: fluxr uses Bayesian inverse modeling to fit two-station stream metabolism models to dissolved oxygen, temperature, light, and depth data.
 License: MIT + file LICENSE
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Biarch: true
@@ -26,3 +27,6 @@ LinkingTo:
     rstan (>= 2.18.1),
     StanHeaders (>= 2.18.0)
 SystemRequirements: GNU make
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
