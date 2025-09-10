@@ -26,7 +26,7 @@ data {
   int<lower=1> n; // number of observations per date
 
   // data values that are fixed each day
-  real<lower=0> depth;
+  //real<lower=0> depth;
   real<lower=0> tt;
   int<lower=0> lag;
 
@@ -35,10 +35,11 @@ data {
   vector[d] DO_obs_down[n];
   vector[d] DO_sat_up[n];
   vector[d] DO_sat_down[n];
-  vector[d] lightfrac[n];
+  vector[d] lightfrac[n]; //NOTE: add to prepdata output
   vector[d] light_mult_GPP[n];
   vector[d] const_mult_ER[n];
   vector[d] KO2_conv[n];
+  vector[d] depth[n];
 }
 
 parameters {
@@ -86,8 +87,8 @@ transformed parameters {
     DO_mod_down[i+lag] =
     (
       DO_obs_up[i] +
-      (GPP_inst[i] / depth .* lightfrac[i]) +
-      (ER_inst[i] / depth * tt) +
+      (GPP_inst[i] / depth[i] .* lightfrac[i]) +
+      (ER_inst[i] / depth[i] * tt) +
       KO2_conv[i] * tt .* (DO_sat_up[i] - DO_obs_up[i] + DO_sat_down[i+lag]) / 2
       ) ./
       ((1 + KO2_conv[i] * tt / 2));
