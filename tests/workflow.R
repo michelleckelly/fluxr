@@ -27,18 +27,21 @@ data_all <-
 data_all$date <- date(data_all$solar.time)
 
 # Set specifications for modeling ##############################################
-mod_specs <- set_specs(model_name = "o2_twostation",
-                       verbose = TRUE)
+mod_specs <- 
+  set_specs(model_name = "o2_twostation", verbose = TRUE)
 
 # Pass data and specs to prepping function #####################################
-data_prepped <- prepdata_bayes_twostation(data = data_all, 
-                                          ply_date = "2024-09-19", 
-                                          specs = mod_specs)
+data_prepped <- 
+  prepdata_bayes_twostation(data = data_all, ply_date = "2024-09-19", 
+                            specs = mod_specs)
+
+# FOR TESTING
+data_list <- data_prepped
 
 # Run model ####################################################################
 #runstan_bayes(data_list = data_prepped, specs = data_prepped$specs)
 
-runstan_bayes <- function(data_list){
+#runstan_bayes <- function(data_list){
   # Pull out model name
   model_name <- data_list$model_name
   
@@ -73,7 +76,7 @@ runstan_bayes <- function(data_list){
     # Start clock for compilation time
     start.time <- Sys.time()
     # If file doesn't exist, compile model
-    if(verbose){message(paste0("\nCompiling ", model_name, ".stan model."))}
+    if(verbose){message(paste0("\nCompiling ", model_name, ".stan model..."))}
     stan_model(file = model_path, auto_write = TRUE)
     # Stop clock
     end.time <- Sys.time()
@@ -108,7 +111,7 @@ runstan_bayes <- function(data_list){
     data = data_list, # think i have to do something with linlight$light_mult_GPP here
     pars = params_out, #NOTE haven't set up params_out
     include = TRUE,
-    chains = n_chains,
+    chains = 1, #should be nchains, 1 for debugging
     warmup = warmup,
     iter = iter, 
     thin = thin_steps,
@@ -123,7 +126,4 @@ runstan_bayes <- function(data_list){
                               units = "hours") * 60, digits = 2)
   
   
-  
-  
-  # run stan
-}
+#}

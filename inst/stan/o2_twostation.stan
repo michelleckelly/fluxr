@@ -13,7 +13,7 @@ data {
   real ER_daily_mu;
   real ER_daily_upper;
   real<lower=0> ER_daily_sigma;
-  real K600_daily_meanlog;
+  real<lower=0> K600_daily_meanlog;
   real<lower=0> K600_daily_sdlog;
 
   // error distributions
@@ -26,26 +26,28 @@ data {
   int<lower=1> n; // number of observations per date
 
   // data values that are fixed each day
-  //real<lower=0> depth;
   real<lower=0> tt;
   int<lower=0> lag;
 
   // data values that change throughout day
-  vector[d] DO_obs_up[n];
-  vector[d] DO_obs_down[n];
-  vector[d] DO_sat_up[n];
-  vector[d] DO_sat_down[n];
-  vector[d] lightfrac[n]; //NOTE: add to prepdata output
-  vector[d] light_mult_GPP[n];
-  vector[d] const_mult_ER[n];
-  vector[d] KO2_conv[n];
-  vector[d] depth[n];
+  // NOTE When you add plys, you'll need to modify these to be vectors rather 
+  // than row_vector, i.e. vector[d] DO_obs_up[n];
+  row_vector[n] DO_obs_up;
+  row_vector[n+lag] DO_obs_down;
+  row_vector[n] DO_sat_up;
+  row_vector[n+lag] DO_sat_down;
+  row_vector[n] lightfrac;
+  row_vector[n] light_mult_GPP;
+  row_vector[n] const_mult_ER;
+  row_vector[n] KO2_conv;
+  row_vector[n] depth;
 }
 
 parameters {
-  vector<lower=GPP_daily_lower>[d] GPP_daily;
-  vector<upper=ER_daily_upper>[d] ER_daily;
-  vector<lower=0>[d] K600_daily;
+  // NOTE: for ply, these become vectors: vector<lower=0>[d] K600_daily;
+  real<lower=GPP_daily_lower> GPP_daily;
+  real<upper=ER_daily_upper> ER_daily;
+  real<lower=0> K600_daily;
 
   real<lower=0> err_obs_iid_sigma_scaled;
   //real<lower=0> err_proc_iid_sigma_scaled;
@@ -55,10 +57,11 @@ transformed parameters {
   real<lower=0> err_obs_iid_sigma;
   //vector[d] DO_mod_down_partial_sigma[n];
   //real<lower=0> err_proc_iid_sigma;=
-  vector[d] GPP_inst[n];
-  vector[d] ER_inst[n];
-  vector[d] KO2_inst[n];
-  vector[d] DO_mod_down[n];
+  // below become vectors with ply: vector[d] GPP_inst[n];
+  row_vector[n] GPP_inst;
+  row_vector[n] ER_inst;
+  row_vector[n] KO2_inst;
+  row_vector[n+lag] DO_mod_down;
 
   // Rescale error distribution parameters
   err_obs_iid_sigma = err_obs_iid_sigma_scale * err_obs_iid_sigma_scaled;
@@ -83,12 +86,11 @@ transformed parameters {
   //DO_mod_down_partial_sigma[1] = err_proc_iid_sigma * timestep ./ depth[1];
   for(i in 1:n){
     // Before feeding into equation, calculate sum light per day
-    // constants need decimal so that Stan will mark them as real (not integer)
     DO_mod_down[i+lag] =
     (
       DO_obs_up[i] +
-      (GPP_inst[i] / depth[i] .* lightfrac[i]) +
-      (ER_inst[i] / depth[i] * tt) +
+      (GPP_inst[i] ./ depth[i] .* lightfrac[i]) +
+      (ER_inst[i] ./ depth[i] * tt) +
       KO2_conv[i] * tt .* (DO_sat_up[i] - DO_obs_up[i] + DO_sat_down[i+lag]) / 2
       ) ./
       ((1 + KO2_conv[i] * tt / 2));
@@ -97,8 +99,8 @@ transformed parameters {
 
 model{
   // IID observation error
-  for(i in 1:n){
-    DO_obs_down[i] ~ normal(DO_mod_down[i+lag], err_obs_iid_sigma);
+  for(i in 1:(n+lag)){
+    DO_obs_down[i] ~ normal(DO_mod_down[i], err_obs_iid_sigma);
   }
 
   // SD of observation error
@@ -111,26 +113,23 @@ model{
 }
 
 generated quantities{
-  vector[d] err_obs_iid[n];
-  vector[d] GPP;
-  vector[d] ER;
-  vector[n] DO_obs_down_vec;
-  vector[n] DO_mod_down_vec;
-  vector[d] DO_R2;
+  // ply: below become vectors vector[d] err_obs_iid[n]; vector[d] GPP;
+  row_vector[n+lag] err_obs_iid;
+  real GPP;
+  real ER;
+  real DO_R2;
 
-  for(i in 1:n){
+  for(i in 1:(n+lag)){
     err_obs_iid[i] = DO_mod_down[i] - DO_obs_down[i];
   }
-  for(j in 1:d){
-    GPP[j] = sum(GPP_inst[1:n24,j]) / n24;
-    ER[j] = sum(ER_inst[1:n24,j]) / n24;
+  // for ply, the below loops 1:d
+  // these were originally sum(GPP_inst[1:n24]) / n24; because of assumption
+  // that we've checked for full days. divide by n for now
+  // this might need to sum over 1+lag:n
+  GPP = sum(GPP_inst[1:n]) / n;
+  ER = sum(ER_inst[1:n]) / n;
 
-    // R2 for DO = difference between observed and modeled DO down
-    for(i in 1:n){
-      DO_mod_down_vec[i] = DO_mod_down[i,j];
-      DO_obs_down_vec[i] = DO_obs_down[i,j];
-    }
-    DO_R2[j] = 1 - sum((DO_mod_down_vec - DO_obs_down_vec) .* (DO_mod_down_vec - DO_obs_down_vec)) / sum((DO_obs_down_vec - mean(DO_obs_down_vec)) .* (DO_obs_down_vec - mean(DO_obs_down_vec)));
-  }
+  // R2 for DO = difference between observed and modeled DO down
+  DO_R2 = 1 - sum((DO_mod_down - DO_obs_down) .* (DO_mod_down - DO_obs_down)) / sum((DO_obs_down - mean(DO_obs_down)) .* (DO_obs_down - mean(DO_obs_down)));
 
 }

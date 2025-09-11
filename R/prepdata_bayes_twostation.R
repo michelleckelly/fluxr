@@ -112,13 +112,14 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                           data_ply$depth_s2[i:(i+lag)]), na.rm = TRUE)
   }
   
+  
   # Format list of data
   data_list = c(
     list(
       d = d, # see note above
       date = moddate, # date
       timestep = timestep_min, # Length of each timestep in minutes
-      n = nobs, # Number of observations on date
+      n = nobs-lag, # Number of observations on date
       n24 = n24 ,# Number of observations in 24 hours, given timestep
       tt = tt_min / 1440, # Avg travel time on day
       lag = lag, # Time lag between s1 and s2
