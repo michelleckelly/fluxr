@@ -14,7 +14,8 @@
 #'
 #' @examples
 #' n2sat(temp = 25, pressure = 29.8, pressUnits = "inHg", outUnits = "mg/L")
-n2sat <- function(temp, pressure, pressUnits, salinity = 0, outUnits){
+n2sat <- function(temp, pressure, pressUnits, salinity = 0, 
+                  outUnits = "mg/L"){
   # Convert barometric pressure into units of atm
   barpress_atm <- convertPressure(barpress = pressure, unit = pressUnits)
 

@@ -82,6 +82,9 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
   moddate <- names(obs_ply)
   nobs <- as.numeric(obs_ply)
   
+  # Get start datetime on day
+  starttime <- min(data_ply$solar.time)
+  
   # Initialize empty vectors for mean light fraction and water temperature
   lightfrac <- vector(mode = "numeric", length = nobs)
   temp <- vector(mode = "numeric", length = nobs)
@@ -112,12 +115,12 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                           data_ply$depth_s2[i:(i+lag)]), na.rm = TRUE)
   }
   
-  
   # Format list of data
   data_list = c(
     list(
       d = d, # see note above
       date = moddate, # date
+      startTime = starttime, # start datetime (solar)
       timestep = timestep_min, # Length of each timestep in minutes
       n = nobs-lag, # Number of observations on date
       n24 = n24 ,# Number of observations in 24 hours, given timestep
@@ -131,12 +134,14 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
       light_mult_GPP = lightfrac[1:(nobs-lag)],
       lightfrac = lightfrac[1:(nobs-lag)],
       const_mult_ER = rep(1, length = nobs-lag),
+      # KO2_conv is a scaling factor for K600 values inside model
       KO2_conv = Kcor_O2(temp = temp, K600 = 1)[1:(nobs-lag)],
       depth = depthvec[1:(nobs-lag)],
       DO_obs_up = data_ply$DO.obs_s1[1:(nobs-lag)],
       DO_obs_down = data_ply$DO.obs_s2,
       DO_sat_up = data_ply$DO.sat_s1[1:(nobs-lag)],
-      DO_sat_down = data_ply$DO.sat_s2
+      DO_sat_down = data_ply$DO.sat_s2,
+      temp = temp[1:(nobs-lag)]
     ),
     
     specs

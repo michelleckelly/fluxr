@@ -48,8 +48,8 @@ set_specs <- function(
   # Names of output parameters for model
   params_out <- 
     c("GPP", "ER", "DO_R2", "GPP_daily", "ER_daily", "K600_daily",
-     ## "K600_daily_sdlog",
-      "err_obs_iid_sigma")
+      "err_obs_iid_sigma", "err_obs_iid_sigma_scaled",
+      "DO_mod_down", "GPP_inst", "ER_inst", "KO2_inst", "err_obs_iid")
   
   specsList <- list(
     model_name = model_name,
