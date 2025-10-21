@@ -52,10 +52,14 @@ format_mcmc_mat <- function(mcmc_mat, #names_params, names_stats,
   # Overall estimates
   par_overall <- mcmc_mat[rownames(mcmc_mat) %in% par_homes$overall,]
   par_overall <- pivotfunc(par_overall, varList = rownames(par_overall))
+  par_overall$date <- data_list$date
+  par_overall <- relocate(par_overall, date)
   
   # Daily estimates
   par_daily <- mcmc_mat[rownames(mcmc_mat) %in% par_homes$daily,]
   par_daily <- pivotfunc(par_daily, varList = rownames(par_daily))
+  par_daily$date <- data_list$date
+  par_daily <- relocate(par_daily, date)
   
   # Instantaneous estimates ----------------------------------------------------
   # Format dataframe
@@ -79,14 +83,13 @@ format_mcmc_mat <- function(mcmc_mat, #names_params, names_stats,
     par_inst$solar.time[i] <- 
       par_inst$solar.time[i-1] + 
       data_list$timestep * 60
-  } # EDITING NOTE: left off here, change below to reference par_inst 
-  # rather than stan_out$inst
+  } 
   
   # Convert from UNIX to UTC
-  stan_out$inst$solar.time <- as.POSIXct(stan_out$inst$solar.time, 
-                                         origin = "1970-01-01",
-                                         tz = "UTC")
-  stan_out$inst <- relocate(stan_out$inst, solar.time)
+  par_inst$solar.time <- as.POSIXct(par_inst$solar.time, 
+                                    origin = "1970-01-01",
+                                    tz = "UTC")
+  par_inst <- relocate(par_inst, solar.time)
   
   mcmc_out <- 
     list(
