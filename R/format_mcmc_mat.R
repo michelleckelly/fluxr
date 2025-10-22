@@ -1,4 +1,4 @@
-#' Format MCMC output into a one-row data.frame
+#' \code{format_mcmc_mat} Format MCMC output into a one-row data.frame
 #'
 #' For split_dates models. Formats output into a one-row data.frame for
 #' row-binding with other such data.frames
@@ -10,6 +10,7 @@
 #' @keywords internal
 format_mcmc_mat <- function(mcmc_mat, #names_params, names_stats, 
                             keep_mcmc, runmcmc_out, data_list) {
+  
   # Initialize a list to fill with modeled parameters, as in 
   # streamMetabolizer::format_mcmc_mat_nosplit()
   par_homes <-
@@ -18,13 +19,14 @@ format_mcmc_mat <- function(mcmc_mat, #names_params, names_stats,
         "err_obs_iid_sigma", "err_obs_iid_sigma_scaled", "lp__"
       ),
       daily = c(
-        "GPP", "ER", "GPP_daily",
-        #"Pmax", "alpha",
-        "ER_daily", "K600_daily", "DO_R2"
-      ),
+        "K600_daily", 
+        "GPP", "ER", "GPP_daily", "ER_daily", "DO_R2",
+        "N2consume", "DN", "N2consume_daily", "DN_daily", "N2_R2"
+        ),
       inst = c(
-        "DO_mod_down", "GPP_inst", "ER_inst", "KO2_inst", "err_obs_iid"
-      )
+        "err_obs_iid",
+        "DO_mod_down", "GPP_inst", "ER_inst", "KO2_inst", 
+        "N2_mod_down", "N2consume_inst", "DN_inst", "KN2_inst")
     )
   
   # Get number of rows of each variable
