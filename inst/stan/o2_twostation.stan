@@ -1,10 +1,9 @@
 // This Stan program defines a two-station O2 model,
-// as written by Nifong et al. ... and available
+// as written by Nifong et al. 2020 and available
 // at github.com/rlnifong/Denitrification/
-// within insst/executables/nn2_model.stan
-//
-// Written following specifications of b_np_oipi_tr_plrckm.stan from
-// streamMetabolizer
+// within insst/executables/nn2_model.stan and 
+// rewritten following error-handling specifications of 
+// b_np_oipi_tr_plrckm.stan from streamMetabolizer
 data {
   // parameters of priors on metabolism
   real GPP_daily_mu;
