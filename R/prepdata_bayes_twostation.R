@@ -14,6 +14,8 @@
 prepdata_bayes_twostation <- function(data, ply_date, specs, 
                                       up.name = "upstream", 
                                       down.name = "downstream"){
+  # Grab model name from specs
+  modname <- specs$model_name
   # Add date column if not there already
   data$date <- lubridate::date(data$solar.time) 
   # Glue location names together
@@ -56,13 +58,26 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                location.names[1] ~ "s1", 
                location.names[2] ~ "s2")
   
-  # Select only columns of interest, wide-transform dataset
-  data_wide <- 
-    as.data.frame(data %>%
-                    select(date, solar.time, location, DO.obs, DO.sat, 
-                           temp.water, light, depth) %>%
-                    pivot_wider(names_from = location, 
-                                values_from = DO.obs:depth))
+  # Select only columns of interest and wide-transform dataset
+  # NOTE: select columns based on the model name passed to specs
+  if(modname == "o2_twostation"){
+    data_wide <- 
+      as.data.frame(
+        data %>%
+          select(date, solar.time, location, DO.obs, DO.sat, 
+                 temp.water, light, depth) %>%
+          pivot_wider(names_from = location, 
+                      values_from = DO.obs:depth))
+  }
+  if(modname == "n2_twostation_nifong"){
+    data_wide <-
+      as.data.frame(
+        data %>%
+          select(date, solar.time, location, N2.obs, N2.sat, 
+                 temp.water, light, depth)%>%
+          pivot_wider(names_from = location, 
+                      values_from = N2.obs:depth))
+  }
   
   # Get number of unique observations per date ---------------------------------
   date_table <- table(data_wide$date)
@@ -91,7 +106,7 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
   depthvec <- vector(mode = "numeric", length = nobs)
   
   # Loop through observations in day
-  for (i in 1:nobs){
+  for(i in 1:nobs){
     # Mean light -------------------------------------------------------------
     # Calculate fraction of daily light seen at upstream station
     lightstep_s1 <- sum(data_ply$light_s1[i:(i+lag)])
@@ -131,21 +146,34 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
     ),
     
     list(
-      light_mult_GPP = lightfrac[1:(nobs-lag)],
       lightfrac = lightfrac[1:(nobs-lag)],
-      const_mult_ER = rep(1, length = nobs-lag),
-      # KO2_conv is a scaling factor for K600 values inside model
-      KO2_conv = Kcor_O2(temp = temp, K600 = 1)[1:(nobs-lag)],
       depth = depthvec[1:(nobs-lag)],
-      DO_obs_up = data_ply$DO.obs_s1[1:(nobs-lag)],
-      DO_obs_down = data_ply$DO.obs_s2,
-      DO_sat_up = data_ply$DO.sat_s1[1:(nobs-lag)],
-      DO_sat_down = data_ply$DO.sat_s2,
       temp = temp[1:(nobs-lag)]
     ),
     
     specs
   )
+  
+  # Add O2 data to output
+  if(modname == "o2_twostation"){
+    data_list$light_mult_GPP <- lightfrac[1:(nobs-lag)]
+    data_list$const_mult_ER <-rep(1, length = nobs-lag)
+    data_list$KO2_conv <- Kcor_O2(temp = temp, K600 = 1)[1:(nobs-lag)]
+    data_list$DO_obs_up <- data_ply$DO.obs_s1[1:(nobs-lag)]
+    data_list$DO_obs_down <- data_ply$DO.obs_s2
+    data_list$DO_sat_up <- data_ply$DO.sat_s1[1:(nobs-lag)]
+    data_list$DO_sat_down <- data_ply$DO.sat_s2
+  }
+  # Add N2 data to output
+  if(modname == "n2_twostation_nifong"){
+    data_list$light_mult_N2consume <- lightfrac[1:(nobs-lag)]
+    data_list$const_mult_DN <-rep(1, length = nobs-lag)
+    data_list$KN2_conv <- Kcor_N2(temp = temp, K600 = 1)[1:(nobs-lag)]
+    data_list$N2_obs_up <- data_ply$N2.obs_s1[1:(nobs-lag)]
+    data_list$N2_obs_down <- data_ply$N2.obs_s2
+    data_list$N2_sat_up <- data_ply$N2.sat_s1[1:(nobs-lag)]
+    data_list$N2_sat_down <- data_ply$N2.sat_s2
+  }
   
   return(data_list)
 }

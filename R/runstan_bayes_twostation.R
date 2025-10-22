@@ -1,4 +1,4 @@
-#' Fit two-station Bayesian metabolism model
+#' \code{runstan_bayes_twostation}  Fit two-station Bayesian metabolism model
 #'
 #' @param data_list list of inputs to Stan model, as returned by `prepdata_bayes_twostation()`
 #' @param specs list of model specifications, as returned by `set_specs()`
@@ -92,8 +92,7 @@ runstan_bayes_twostation <- function(data_list, specs){
   
   # Detect if run was successful
   end.time <- Sys.time()
-  elapsed <- round(as.numeric(end.time - start.time, 
-                              units = "hours") * 60, digits = 2)
+  elapsed <- end.time - start.time
   
   # streamMetabolizer puts a breakpoint here when debugging 
   
@@ -111,6 +110,7 @@ runstan_bayes_twostation <- function(data_list, specs){
     # Pull stats (column) names
     names_stats <- rep(gsub("%", "pct", colnames(stan_mat)), 
                        each = nrow(stan_mat))
+    
     # Format stan output
     ## Could probably get rid of datetime_index in $inst output
     stan_out <- format_mcmc_mat(mcmc_mat = stan_mat,# names_params, names_stats, 
@@ -118,6 +118,11 @@ runstan_bayes_twostation <- function(data_list, specs){
                                 data_list)
     ## NOTE: For multiday models, stan_out is a list of dataframes where each df is a "node"
     
+    # Add dataframe of predicted and actual gas concentrations
+    stan_out$conc <- 
+      return_gas(modname = model_name, 
+                 instresults = stan_out$inst, 
+                 inputdata = data_list)
   }
   
   # Attach contents of most recent logfile (which will be for this model)
@@ -132,9 +137,15 @@ runstan_bayes_twostation <- function(data_list, specs){
   stan_out <- c(stan_out, c(
     list(log = log),
     if(exists("compile_log")){list(compile_log = compile_log)},
-    list(compile_time_min = elapsed)))
+    list(compile_time = elapsed)))
   
-  return(stan_out)
+  # Package stan output with initial data and modeling specifications
+  output <-
+    list(
+      stan_out = stan_out,
+      model_specs = specs,
+      input_data = data_list
+    )
   
-  
+  return(output)
 }
