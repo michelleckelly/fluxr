@@ -4,7 +4,7 @@
 \alias{n2sat}
 \title{Calculate dinitrogen gas concentrations at saturation given water temperature, atmospheric pressure, and salinity}
 \usage{
-n2sat(temp, pressure, pressUnits, salinity = 0, outUnits)
+n2sat(temp, pressure, pressUnits, salinity = 0, outUnits = "mg/L")
 }
 \arguments{
 \item{temp}{Water temperature in degrees C}

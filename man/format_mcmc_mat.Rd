@@ -2,9 +2,9 @@
 % Please edit documentation in R/format_mcmc_mat.R
 \name{format_mcmc_mat}
 \alias{format_mcmc_mat}
-\title{Format MCMC output into a one-row data.frame}
+\title{\code{format_mcmc_mat} Format MCMC output into a one-row data.frame}
 \usage{
-format_mcmc_mat(mcmc_mat, names_params, names_stats, keep_mcmc, runmcmc_out)
+format_mcmc_mat(mcmc_mat, keep_mcmc, runmcmc_out, data_list)
 }
 \arguments{
 \item{mcmc_mat}{matrix as extracted from Stan}

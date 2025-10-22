@@ -14,6 +14,12 @@ set_specs(
   ER_daily_mu = -7.1,
   ER_daily_upper = Inf,
   ER_daily_sigma = 7.1,
+  N2consume_daily_mu = -1,
+  N2consume_daily_lower = -Inf,
+  N2consume_daily_sigma = 5,
+  DN_daily_mu = 1,
+  DN_daily_upper = Inf,
+  DN_daily_sigma = 5,
   K600_daily_meanlog = log(12),
   K600_daily_sdlog = 0.05,
   err_obs_iid_sigma_scale = 0.03,
@@ -29,5 +35,10 @@ set_specs(
 This function is based on the function of the same name from
 \code{streamMetabolizer}, just simplified to only parameters relavant for
 our model type (Bayes, observation error, reaeration depends on modeled gas
-at downstream station). Default values are the same as \code{streamMetabolizer}.
+at downstream station).
+}
+\details{
+Default values for GPP, ER, and K600 are the same as \code{streamMetabolizer}.
+Default values for N2consume and DN are the same as those in Nifong et al.
+2020.
 }
