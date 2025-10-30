@@ -4,23 +4,15 @@ library(tidyverse)
 library(roxygen2)
 library(rstan)
 
-# load package
-#roxygen2::roxygenize()
-load_all()
-
-# Compile stan model
-#modl <- stanc(file = "inst/stan/o2_twostation.stan")
-#str(modl)
-
 ## Note: for cleaning new datasets: will need to import convert_UTC_to_solartime function from streammetabolizer
 
 # Load internal dataset ########################################################
 # Already has equal time breaks, travel time calculated, no NAs
-data(diel)
+data(dielN2)
 
-# Pull just the O2 data 
+# Rename the light column
 data_all <- 
-  diel %>%
+  dielN2 %>%
   rename(light = light.calc)
 
 # Add date column
