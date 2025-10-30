@@ -21,17 +21,63 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
   # Glue location names together
   location.names <- c(up.name, down.name)
   
-  # NOTE: fixing number of days here for now, but in future this should be 
-  # modified to reflect the number of days of data passed to the prep data 
-  # function
-  d <- 1
+  # Seperate upstream and downstream data for checking procedures
+  updata <- filter(data, location == up.name)
+  downdata <- filter(data, location == down.name)
+  
+  date_table_up <- table(updata$date)
+  date_table_down <- table(downdata$date)
+  
+  # Verify that number of dates is the same
+  num_dates <- unique(c(length(date_table_up), length(date_table_down)))
+  if(length(num_dates) > 1){
+    stop("upstream and downstream sensor have differing number of observation dates")
+  }
+  
+  # Check if dates have same number of observations at upstream and downstream sensor
+  if(!all.equal(date_table_up, date_table_down)){
+    stop("upstream and downstream sensor have differing number of observations")
+  }
+  # Check if each date has same number of observations
+  tot_daily_obs <- unique(c(unname(date_table_up), unname(date_table_down)))
+  # Return error if there's unequal observations across days
+  if(length(tot_daily_obs) > 1){
+    stop("dates have differing numbers of rows")
+  }
+  
+  num_daily_obs <- tot_daily_obs
+  
+  time_by_date_matrix <- function(vec){
+    matrix(data = vec, nrow = num_daily_obs, ncol = num_dates, byrow = FALSE)
+  }
+  
+  # Confirm that number of daily observations is the same at both sensor stations
+  obs_dates_up <- time_by_date_matrix(as.numeric(updata$date, format = "%Y-%m-%d"))
+  obs_dates_down <- time_by_date_matrix(as.numeric(downdata$date, format = "%Y-%m-%d"))
+  if(!all.equal(obs_dates_up, obs_dates_down)){
+    stop("number of daily observations differs at upstream and downstream locations")
+  }
+  
+  # Confirm that data collected at both sensor stations has the same timestep
+  obs_times_up <- time_by_date_matrix(as.numeric(updata$solar.time - updata$solar.time[1], units = "days"))
+  obs_times_down <- time_by_date_matrix(as.numeric(downdata$solar.time - downdata$solar.time[1], units = "days"))
+  if(!all.equal(obs_times_up, obs_times_down)){
+    stop("time of measurement differs at upstream and downstream locations")
+  }
   
   # Get timesteps --------------------------------------------------------------
-  obs_times <- unique(data$solar.time)
-  # Grab time difference between measurements, min
-  timestep_min <- round(as.numeric(obs_times[2] - obs_times[1]))
-  # Calc n24, number of measurements in full 24 hours
-  n24 <- round(1 / (timestep_min / 1440))
+  timestep_up <- as.numeric(diff(obs_times_up), units = "days")
+  timestep_down <- as.numeric(diff(obs_times_down), units = "days")
+  if(!all.equal(timestep_up, timestep_down)){
+    stop("time between successive measurments differs at upstream and downstream locations")
+  }
+  timestep_eachday <- c(timestep_up, timestep_down)
+  if(length(unique(round(timestep_eachday, digits = 10))) != 1){
+    stop("could not determine a single timestep for all observations")
+  }
+  timestep_days <- mean(timestep_eachday)
+  timestep_min <- timestep_days * 1440
+  n24 <- round(1/timestep_days)
   
   # Get dates ------------------------------------------------------------------
   obs_dates <- unique(data$date)
@@ -58,8 +104,58 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                location.names[1] ~ "s1", 
                location.names[2] ~ "s2")
   
+  # Function for adding lag to s2 data points
+  lagged <- function(widedata){
+    # initialize i
+    dayi <- 1
+    # Intialize empty list
+    laglist <- vector(mode = "list", length = length(unique(widedata$date)))
+    
+    # Loop
+    for(dayi in seq_along(unique(widedata$date))){
+      # Get date
+      day <- unique(widedata$date)[dayi]
+      
+      # Segment data_wide to just data from day
+      day_data <- filter(widedata, date == day)
+      # Grab lag for day
+      lagn <- filter(data_daily, date == day)$lag
+      
+      # Mutate 
+      # Note that light_s2 does not need lagging
+      day_lagged <- 
+        day_data %>%
+        mutate_at(vars(!starts_with("light") & ends_with("_s2")), 
+                  ~lag(., n = lagn))
+      
+      # Rename columns to denote that they've been lagged
+      names(day_lagged) <- gsub("_s2", "_s2.lag", names(day_lagged))
+      # Except for light
+      names(day_lagged) <- gsub("light_s2.lag", "light_s2", names(day_lagged))
+
+      # We can't remove the NA lag rows because stan won't accept NA values,
+      # and the NA rows won't be used in model loop because index begins at 
+      # lag + 1, so get rid of NA with a large negative number
+      day_lagged[is.na(day_lagged)] <- -9999
+      
+      # Grab the average light
+      day_lagged$light_avg <- rowMeans(day_lagged[c("light_s1", "light_s2")])
+      
+      # Calculate light fraction
+      lighttot <- sum(day_lagged$light_avg, na.rm = TRUE)
+      day_lagged$lightfrac <- day_lagged$light_avg / lighttot
+      
+      # Add to output list
+      laglist[[dayi]] <- day_lagged
+    }
+    
+    # Glue output together
+    lagframe <- bind_rows(laglist)
+    return(lagframe)
+  }
+  
   # Select only columns of interest and wide-transform dataset
-  # NOTE: select columns based on the model name passed to specs
+  # & lag s2 columns
   if(modname == "o2_twostation"){
     data_wide <- 
       as.data.frame(
@@ -68,6 +164,10 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                  temp.water, light, depth) %>%
           pivot_wider(names_from = location, 
                       values_from = DO.obs:depth))
+    
+    # Add lag for s2 columns
+    data_wide <- lagged(data_wide)
+    
   }
   if(modname == "n2_twostation_nifong"){
     data_wide <-
@@ -77,78 +177,45 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
                  temp.water, light, depth)%>%
           pivot_wider(names_from = location, 
                       values_from = N2.obs:depth))
+    
+    # Add lag for s2 columns
+    data_wide <- lagged(data_wide)
   }
   
   # Get number of unique observations per date ---------------------------------
   date_table <- table(data_wide$date)
   num_daily_obs <- unname(date_table)
   
-  # For future editing: loop over total number of dates here, separating data 
-  # from each date into its own data_ply ---------------------------------------
-  data_ply <- data_wide[data_wide$date == ply_date,]
-  daily_ply <- data_daily[data_daily$date == ply_date,]
-  obs_ply <- date_table[names(date_table) == ply_date]
+  # Grab avg depth
+  # Since we've lagged s2, we can calc this with a simple row average
+  data_wide$depth_avg <- rowMeans(data_wide[c("depth_s1", "depth_s2.lag")])
   
-  # Pull day's parameters out of data_daily
-  tt_min <- daily_ply$tt_min
-  lag <- daily_ply$lag
-  depth <- daily_ply$depth
-  discharge <- daily_ply$discharge
-  moddate <- names(obs_ply)
-  nobs <- as.numeric(obs_ply)
-  
-  # Get start datetime on day
-  starttime <- min(data_ply$solar.time)
-  
-  # Initialize empty vectors for mean light fraction and water temperature
-  lightfrac <- vector(mode = "numeric", length = nobs)
-  temp <- vector(mode = "numeric", length = nobs)
-  depthvec <- vector(mode = "numeric", length = nobs)
-  
-  # Loop through observations in day
-  for(i in 1:nobs){
-    # Mean light -------------------------------------------------------------
-    # Calculate fraction of daily light seen at upstream station
-    lightstep_s1 <- sum(data_ply$light_s1[i:(i+lag)])
-    lighttotal_s1 <- sum(data_ply$light_s1, na.rm = TRUE)
-    lightfrac_s1 <- lightstep_s1 / lighttotal_s1
-    
-    # Calculate fraction of daily light seen at downstream station
-    lightstep_s2 <- sum(data_ply$light_s2[i:(i+lag)])
-    lighttotal_s2 <- sum(data_ply$light_s2, na.rm = TRUE)
-    lightfrac_s2 <- lightstep_s2 / lighttotal_s2
-    
-    # Calculate mean light fraction, add to vector
-    lightfrac[i] <- mean(c(lightfrac_s1, lightfrac_s2), na.rm = TRUE)
-    
-    # Mean water temperature -------------------------------------------------
-    temp[i] <- mean(c(data_ply$temp.water_s1[i:(i+lag)], 
-                      data_ply$temp.water_s2[i:(i+lag)]), na.rm = TRUE)
-    
-    # Mean depth -------------------------------------------------------------
-    depthvec[i] <- mean(c(data_ply$depth_s1[i:(i+lag)],
-                          data_ply$depth_s2[i:(i+lag)]), na.rm = TRUE)
-  }
+  # Grab avg water temp
+  data_wide$temp.water_avg <- rowMeans(data_wide[c("temp.water_s1", 
+                                                   "temp.water_s2.lag")])
   
   # Format list of data
   data_list = c(
     list(
-      d = d, # see note above
-      date = moddate, # date
-      startTime = starttime, # start datetime (solar)
+      
+      # Overall
+      d = num_dates, 
       timestep = timestep_min, # Length of each timestep in minutes
-      n = nobs-lag, # Number of observations on date
-      n24 = n24 ,# Number of observations in 24 hours, given timestep
-      tt = tt_min / 1440, # Avg travel time on day
-      lag = lag, # Time lag between s1 and s2
-      #depth = depth, #average depth on day
-      discharge = discharge # average discharge on day
+      n24 = n24 # Number of total potential observations in 24 hours
     ),
     
     list(
-      lightfrac = lightfrac[1:(nobs-lag)],
-      depth = depthvec[1:(nobs-lag)],
-      temp = temp[1:(nobs-lag)]
+      # Data that has one value per day
+      tt = data_daily$tt_min / 1400,
+      lag = data_daily$lag,
+      n = n24 - data_daily$lag # non-NA observations
+    ),
+    
+    list(
+      
+      depth = time_by_date_matrix(data_wide$depth_avg),
+      temp = time_by_date_matrix(data_wide$temp.water_avg)
+      
     ),
     
     specs
@@ -156,23 +223,30 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
   
   # Add O2 data to output
   if(modname == "o2_twostation"){
-    data_list$light_mult_GPP <- lightfrac[1:(nobs-lag)]
-    data_list$const_mult_ER <-rep(1, length = nobs-lag)
-    data_list$KO2_conv <- Kcor_O2(temp = temp, K600 = 1)[1:(nobs-lag)]
-    data_list$DO_obs_up <- data_ply$DO.obs_s1[1:(nobs-lag)]
-    data_list$DO_obs_down <- data_ply$DO.obs_s2
-    data_list$DO_sat_up <- data_ply$DO.sat_s1[1:(nobs-lag)]
-    data_list$DO_sat_down <- data_ply$DO.sat_s2
+    data_list$light_mult_GPP <- time_by_date_matrix(data_wide$lightfrac)
+    data_list$const_mult_ER <- time_by_date_matrix(1)
+    
+    data_list$KO2_conv_vec <- Kcor_O2(K600 = 1, temp = data_wide$temp.water_avg)
+    data_list$KO2_conv <- time_by_date_matrix(data_list$KO2_conv_vec)
+    
+    data_list$DO_obs_up <- time_by_date_matrix(data_wide$DO.obs_s1)
+    data_list$DO_obs_down <- time_by_date_matrix(data_wide$DO.obs_s2.lag)
+    data_list$DO_sat_up <- time_by_date_matrix(data_wide$DO.sat_s1)
+    data_list$DO_sat_down <- time_by_date_matrix(data_wide$DO.sat_s2.lag)
   }
+  
   # Add N2 data to output
   if(modname == "n2_twostation_nifong"){
-    data_list$light_mult_N2consume <- lightfrac[1:(nobs-lag)]
-    data_list$const_mult_DN <-rep(1, length = nobs-lag)
-    data_list$KN2_conv <- Kcor_N2(temp = temp, K600 = 1)[1:(nobs-lag)]
-    data_list$N2_obs_up <- data_ply$N2.obs_s1[1:(nobs-lag)]
-    data_list$N2_obs_down <- data_ply$N2.obs_s2
-    data_list$N2_sat_up <- data_ply$N2.sat_s1[1:(nobs-lag)]
-    data_list$N2_sat_down <- data_ply$N2.sat_s2
+    data_list$light_mult_N2consume <- time_by_date_matrix(data_wide$lightfrac)
+    data_list$const_mult_DN <- time_by_date_matrix(1)
+    
+    data_list$KN2_conv_vec <- Kcor_N2(K600 = 1, temp = data_wide$temp.water_avg)
+    data_list$KN2_conv <- time_by_date_matrix(data_list$KN2_conv_vec)
+    
+    data_list$N2_obs_up <- time_by_date_matrix(data_wide$N2.obs_s1)
+    data_list$N2_obs_down <- time_by_date_matrix(data_wide$N2.obs_s2.lag)
+    data_list$N2_sat_up <- time_by_date_matrix(data_wide$N2.sat_s1)
+    data_list$N2_sat_down <- time_by_date_matrix(data_wide$N2.sat_s2.lag)
   }
   
   return(data_list)

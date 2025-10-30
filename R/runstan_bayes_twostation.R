@@ -40,8 +40,9 @@ runstan_bayes_twostation <- function(data_list, specs){
     start.time <- Sys.time()
     # If file doesn't exist, compile model
     if(verbose){message(paste0("\nCompiling ", model_name, ".stan model..."))}
-    stan_model(file = model_path, model_name = model_name, auto_write = TRUE,
-               warn_pedantic = TRUE, warn_uninitialized = TRUE)
+    rstan::stan_model(file = model_path, model_name = model_name, 
+                      auto_write = TRUE, warn_pedantic = TRUE, 
+                      warn_uninitialized = TRUE)
     # Stop clock
     end.time <- Sys.time()
     
@@ -102,27 +103,16 @@ runstan_bayes_twostation <- function(data_list, specs){
     stan_out <- NULL
     warning(capture.output(print(runstan_out)))
   } else {
-    # Assuming here that we're just running 1-day models
     stan_mat <- rstan::summary(runstan_out)$summary
-    # Pull modeled parameter (row) names
-    names_params <- rep(gsub("\\[1\\]", "", rownames(stan_mat)), 
-                        each = ncol(stan_mat))
-    # Pull stats (column) names
-    names_stats <- rep(gsub("%", "pct", colnames(stan_mat)), 
-                       each = nrow(stan_mat))
-    
     # Format stan output
-    ## Could probably get rid of datetime_index in $inst output
-    stan_out <- format_mcmc_mat(mcmc_mat = stan_mat,# names_params, names_stats, 
-                                keep_mcmc, runmcmc_out = runstan_out,
-                                data_list)
-    ## NOTE: For multiday models, stan_out is a list of dataframes where each df is a "node"
+    stan_out <- format_mcmc_mat_twostation(stan_mat, keep_mcmc, runstan_out)
     
+    ## NOTE -- ADD HERE ##
     # Add dataframe of predicted and actual gas concentrations
-    stan_out$conc <- 
-      return_gas(modname = model_name, 
-                 instresults = stan_out$inst, 
-                 inputdata = data_list)
+    #stan_out$conc <- 
+     # return_gas(modname = model_name, 
+      #           instresults = stan_out$inst, 
+       #          inputdata = data_list)
   }
   
   # Attach contents of most recent logfile (which will be for this model)
@@ -139,13 +129,5 @@ runstan_bayes_twostation <- function(data_list, specs){
     if(exists("compile_log")){list(compile_log = compile_log)},
     list(compile_time = elapsed)))
   
-  # Package stan output with initial data and modeling specifications
-  output <-
-    list(
-      stan_out = stan_out,
-      model_specs = specs,
-      input_data = data_list
-    )
-  
-  return(output)
+  return(stan_out)
 }
