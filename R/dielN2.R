@@ -15,7 +15,7 @@
 #' calculated using the `calc_light` function from the `streamMetabolizer` R
 #' package.
 #'
-#' @format ## `diel`
+#' @format ## `dielN2`
 #' A data frame with 224 rows and 17 columns:
 #' \describe{
 #'    \item{solar.time}{Solar time}
@@ -35,4 +35,4 @@
 #'    \item{tt}{Travel time between sampling locations, min}
 #'    \item{pressure}{Barometric pressure, mbar}
 #' }
-"diel"
+"dielN2"
