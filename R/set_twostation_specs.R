@@ -1,4 +1,4 @@
-#' \code{set_specs} Generate a list of model specifications
+#' \code{set_twostation_specs} Generate a list of model specifications
 #' 
 #' This function is based on the function of the same name from 
 #' `streamMetabolizer`, just simplified to only parameters relavant for 
@@ -9,7 +9,7 @@
 #' Default values for N2consume and DN are the same as those in Nifong et al. 
 #' 2020.
 #' 
-set_specs <- function(
+set_twostation_specs <- function(
     model_name,
     
     keep_mcmc = TRUE,
@@ -103,7 +103,7 @@ set_specs <- function(
   }
   
   # Set additional parameters for N2 models, output specsList
-  if(model_name == "n2_twostation_nifong"){
+  if(str_detect(model_name, "n2_twostation")){
     
     params_in <- 
       c(params_in, 
