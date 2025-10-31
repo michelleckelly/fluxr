@@ -1,78 +1,65 @@
-library(rstan)
-library(devtools)
+# Pull together an example multi-day dataset
 library(tidyverse)
-library(roxygen2)
-library(rstan)
 
-## Note: for cleaning new datasets: will need to import convert_UTC_to_solartime function from streammetabolizer
+# Load in metabolism parameters
+data("multidayO2")
 
-# Load internal dataset ########################################################
-# Already has equal time breaks, travel time calculated, no NAs
-data(dielN2)
+ggplot(data = multidayO2, aes(x = solar.time, y = DO.obs, color = location)) +
+  geom_point()
 
-# Rename the light column
+# Filter for testing
 data_all <- 
-  dielN2 %>%
-  rename(light = light.calc)
+  multidayO2 %>%
+  filter(solar.time <= ymd_hms("2019-05-20 00:00:00"))
 
-# Add date column
-data_all$date <- date(data_all$solar.time)
-
-# Modeling settings ############################################################
-modname <- "n2_twostation_nifong" # N2
-#modname <- "o2_twostation" # O2
-
-mod_specs <- 
-  set_specs(model_name = modname, verbose = TRUE,
+# Modeling settings
+modname <- "o2_twostation"
+specs <- 
+  set_twostation_specs(model_name = modname, verbose = TRUE,
             K600_daily_meanlog = 1, K600_daily_sdlog = 0.05,
             n_cores = 8, n_chains = 8)
 
-# Prep data ####################################################################
-data_prepped <- 
-  prepdata_bayes_twostation(data = data_all, ply_date = "2024-09-19", 
-                            specs = mod_specs)
+# Model two station
+model <- run_twostation(data = data_all, specs = specs, upname = "S1", 
+                        downname = "S2")
 
-# Run model ####################################################################
-mod_out <- 
-  runstan_bayes_twostation(data_list = data_prepped, 
-                           specs = mod_specs)
+# Plot comparison of modeled and measured gas
+ggplot(data = model$fit_info$modeled_gas, aes(x = solar.time)) +
+  geom_ribbon(aes(y = DO_mod_down_mean, 
+                  ymin =DO_mod_down_mean -  DO_mod_down_sd,
+                  ymax = DO_mod_down_mean + DO_mod_down_sd, color = "modeled",
+                  fill = "modeled"), alpha = 0.5) +
+  geom_line(aes(y = DO_obs_down, fill = "measured", color = "measured"))
 
-# Evaluate fit and predictions #################################################
-# View daily fit statistics 
-getdailyfit(mod_out)
+model$fit_info$fit_stats
 
-# View predicted rates
-# Flux units are g-[O2 N2] m-2 d-1
-mod_out$stan_out$daily %>%
-  select(date, matches("daily_mean|daily_sd"))
+###
+data("dielN2")
 
-# For mg-N m-2 h-1: value / 28 * 2 * 14 * 1000 / 24
+dielN2 <-
+  dielN2 %>%
+  filter(solar.time >= ymd_hms("2024-09-19 00:00:00"))
 
-mod_out$stan_out$daily$DN_daily_mean * 1000 / 24
-mod_out$stan_out$daily$N2consume_daily_mean * 1000 / 24
+ggplot(data = dielN2, aes(x = solar.time, y = N2.obs, color = location)) +
+  geom_point()
 
+# Modeling settings
+modname <- "n2_twostation_nifong"
+specs <- 
+  set_twostation_specs(model_name = modname, verbose = TRUE,
+                       K600_daily_meanlog = 1, K600_daily_sdlog = 0.05,
+                       n_cores = 8, n_chains = 8)
 
-# Plot modeled vs observed gas
-if(modname == "n2_twostation_nifong"){
-  ggplot(data = mod_out$stan_out$conc, 
-         aes(x = solar.time)) +
-    geom_ribbon(aes(ymin = N2.mod.down.lower, ymax = N2.mod.down.upper, 
-                    fill = "Modeled"), alpha = 0.4) +
-    geom_point(aes(y = N2.obs.down, color = "Observed")) +
-    geom_point(aes(y = N2.mod.down, color = "Modeled")) +
-    theme_minimal()
-  } else{
-    ggplot(data = mod_out$stan_out$conc, 
-           aes(x = solar.time)) +
-      geom_ribbon(aes(ymin = DO.mod.down.lower, ymax = DO.mod.down.upper, 
-                      fill = "Modeled"), alpha = 0.4) +
-      geom_point(aes(y = DO.obs.down, color = "Observed")) +
-      geom_point(aes(y = DO.mod.down, color = "Modeled")) +
-      theme_minimal()
-  }
+# Model two station
+modelN2 <- run_twostation(data = dielN2, specs = specs, upname = "upstream", 
+                        downname = "downstream")
 
-# Save model results ###########################################################
-#filename <- ""
+# Plot comparison of modeled and measured gas
+ggplot(data = model$fit_info$modeled_gas, aes(x = solar.time)) +
+  geom_ribbon(aes(y = DO_mod_down_mean, 
+                  ymin =DO_mod_down_mean -  DO_mod_down_sd,
+                  ymax = DO_mod_down_mean + DO_mod_down_sd, color = "modeled",
+                  fill = "modeled"), alpha = 0.5) +
+  geom_line(aes(y = DO_obs_down, fill = "measured", color = "measured"))
 
-# Next tasks:
-# build in support for multiday datasets
+model$fit_info$fit_stats
