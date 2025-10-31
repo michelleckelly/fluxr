@@ -4,13 +4,7 @@
 \alias{prepdata_bayes_twostation}
 \title{\code{prepdata_bayes_twostation} Prepare two-station data for Bayesian modeling}
 \usage{
-prepdata_bayes_twostation(
-  data,
-  ply_date,
-  specs,
-  up.name = "upstream",
-  down.name = "downstream"
-)
+prepdata_bayes_twostation(data, ply_date, specs, up.name, down.name)
 }
 \arguments{
 \item{data}{Dataset containing columns: \code{solar.time}, \code{location}, \code{DO.obs}, \code{DO.sat}, \code{temp.water}, \code{light}, \code{depth}, \code{tt}, \code{pressure}}
@@ -18,17 +12,7 @@ prepdata_bayes_twostation(
 \item{ply_date}{Date to model, YYYY-MM-DD}
 
 \item{specs}{List returned by \code{set_specs()}}
-
-\item{up.name}{Character string denoting the name of the upstream sampling station (must match name in \code{location} column)}
-
-\item{down.name}{Character string denoting the name of the downstream sampling station (must match name in \code{location} column)}
-}
-\value{
-Numeric vector
 }
 \description{
 \code{prepdata_bayes_twostation} Prepare two-station data for Bayesian modeling
-}
-\references{
-Raymond, P. A., Zappa, C. J., Butman, D., Bott, T. L., Potter, J., Mulholland, P., et al. (2012). Scaling the gas transfer velocity and hydraulic geometry in streams and small rivers: Gas transfer velocity and hydraulic geometry. Limnology and Oceanography: Fluids and Environments, 2(1), 41–53. https://doi.org/10.1215/21573689-1597669
 }
