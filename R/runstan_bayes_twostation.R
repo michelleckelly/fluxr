@@ -106,13 +106,6 @@ runstan_bayes_twostation <- function(data_list, specs){
     stan_mat <- rstan::summary(runstan_out)$summary
     # Format stan output
     stan_out <- format_mcmc_mat_twostation(stan_mat, keep_mcmc, runstan_out)
-    
-    ## NOTE -- ADD HERE ##
-    # Add dataframe of predicted and actual gas concentrations
-    #stan_out$conc <- 
-     # return_gas(modname = model_name, 
-      #           instresults = stan_out$inst, 
-       #          inputdata = data_list)
   }
   
   # Attach contents of most recent logfile (which will be for this model)
