@@ -3,21 +3,10 @@
 #' @param data Dataset containing columns: `solar.time`, `location`, `DO.obs`, `DO.sat`, `temp.water`, `light`, `depth`, `tt`, `pressure`
 #' @param ply_date Date to model, YYYY-MM-DD
 #' @param specs List returned by `set_specs()`
-#' @param up.name Character string denoting the name of the upstream sampling station (must match name in `location` column)
-#' @param down.name Character string denoting the name of the downstream sampling station (must match name in `location` column)
-#'
-#' @returns Numeric vector
-#'
-#' @references Raymond, P. A., Zappa, C. J., Butman, D., Bott, T. L., Potter, J., Mulholland, P., et al. (2012). Scaling the gas transfer velocity and hydraulic geometry in streams and small rivers: Gas transfer velocity and hydraulic geometry. Limnology and Oceanography: Fluids and Environments, 2(1), 41–53. https://doi.org/10.1215/21573689-1597669
-#'
-#' @export
-prepdata_bayes_twostation <- function(data, ply_date, specs, 
-                                      up.name = "upstream", 
-                                      down.name = "downstream"){
+
+prepdata_bayes_twostation <- function(data, specs, up.name, down.name){
   # Grab model name from specs
   modname <- specs$model_name
-  # Add date column if not there already
-  data$date <- lubridate::date(data$solar.time) 
   # Glue location names together
   location.names <- c(up.name, down.name)
   
@@ -169,7 +158,7 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
     data_wide <- lagged(data_wide)
     
   }
-  if(modname == "n2_twostation_nifong"){
+  if(str_detect(modname, "n2_twostation")){
     data_wide <-
       as.data.frame(
         data %>%
@@ -236,7 +225,7 @@ prepdata_bayes_twostation <- function(data, ply_date, specs,
   }
   
   # Add N2 data to output
-  if(modname == "n2_twostation_nifong"){
+  if(str_detect(modname, "n2_twostation")){
     data_list$light_mult_N2consume <- time_by_date_matrix(data_wide$lightfrac)
     data_list$const_mult_DN <- time_by_date_matrix(1)
     
