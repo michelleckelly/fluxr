@@ -122,23 +122,21 @@ generated quantities{
   vector[d] err_obs_iid[n24];
   vector[d] GPP;
   vector[d] ER;
-  vector[n24] DO_obs_down_vec; // temporary, needed to reorganize matrix structure
-  vector[n24] DO_mod_down_vec; // temporary
+  vector[n24-daylag] DO_obs_down_vec; // temporary, needed to reorganize matrix structure
+  vector[n24-daylag] DO_mod_down_vec; // temporary
   vector[d] DO_R2;
 
   for(i in daylag:n24){
     err_obs_iid[i] = DO_mod_down[i] - DO_obs_down[i];
   }
   // for ply, the below loops 1:d
-  // these were originally sum(GPP_inst[1:n24]) / n24; because of assumption
-  // that we've checked for full days. divide by n for now
   for(j in 1:d){
     GPP[j] = sum(GPP_inst[1:n24, j]) / n24;
     ER[j] = sum(ER_inst[1:n24, j]) / n24;
     
-    for(i in daylag:n24){
-      DO_mod_down_vec[i] = DO_mod_down[i,j];
-      DO_obs_down_vec[i] = DO_obs_down[i,j];
+    for(i in 1:n24-daylag){
+      DO_mod_down_vec[i] = DO_mod_down[i+daylag,j];
+      DO_obs_down_vec[i] = DO_obs_down[i+daylag,j];
     }
     
     // R2 for DO = difference between observed and modeled DO down
