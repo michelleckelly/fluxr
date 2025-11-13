@@ -4,7 +4,13 @@
 \alias{run_twostation}
 \title{\code{run_twostation} Fit a two-station Bayesian metabolism model for O2 or N2 flux}
 \usage{
-run_twostation(data, specs, upname = "upstream", downname = "downstream")
+run_twostation(
+  data,
+  specs,
+  upname = "upstream",
+  downname = "downstream",
+  return_fit = TRUE
+)
 }
 \arguments{
 \item{data}{dataframe containing columns \code{solar.time}, \code{location}, \code{DO.obs}, \code{DO.sat}, \code{temp.water}, \code{light}, \code{depth}, \code{tt}, \code{pressure}}
@@ -14,9 +20,11 @@ run_twostation(data, specs, upname = "upstream", downname = "downstream")
 \item{upname}{a character string specifying the name of the upstream sampling station in the \code{location} column. Defaults to "upstream"}
 
 \item{downname}{a character string specifying the name of the downstream sampling station in the \code{location} column. Defaults to "downstream"}
+
+\item{return_fit}{if TRUE, include dataframe of daily Rhat and R2 and dataframe of modeled gas concentrations in output}
 }
 \value{
-Numeric vector
+List of model outputs
 }
 \description{
 \code{run_twostation} Fit a two-station Bayesian metabolism model for O2 or N2 flux
