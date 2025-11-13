@@ -1,0 +1,86 @@
+---
+title: "getting-started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{getting-started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, eval = FALSE}
+library(fluxr)
+
+# Pull together an example multi-day dataset
+library(tidyverse)
+
+# Load in metabolism parameters
+data("multidayO2")
+
+ggplot(data = multidayO2, aes(x = solar.time, y = DO.obs, color = location)) +
+  geom_point()
+
+# Filter for testing
+data_all <- 
+  multidayO2 %>%
+  filter(solar.time <= ymd_hms("2019-05-20 00:00:00"))
+
+# Modeling settings
+modname <- "o2_twostation"
+specs <- 
+  set_twostation_specs(model_name = modname, verbose = TRUE,
+            K600_daily_meanlog = 1, K600_daily_sdlog = 0.05,
+            n_cores = 8, n_chains = 8)
+
+# Model two station
+model <- run_twostation(data = data_all, specs = specs, upname = "S1", 
+                        downname = "S2")
+
+# Plot comparison of modeled and measured gas
+ggplot(data = model$fit_info$modeled_gas, aes(x = solar.time)) +
+  geom_ribbon(aes(y = DO_mod_down_mean, 
+                  ymin =DO_mod_down_mean -  DO_mod_down_sd,
+                  ymax = DO_mod_down_mean + DO_mod_down_sd, color = "modeled",
+                  fill = "modeled"), alpha = 0.5) +
+  geom_line(aes(y = DO_obs_down, fill = "measured", color = "measured"))
+
+model$fit_info$fit_stats
+
+###
+data("dielN2")
+
+dielN2 <-
+  dielN2 %>%
+  filter(solar.time >= ymd_hms("2024-09-19 00:00:00"))
+
+ggplot(data = dielN2, aes(x = solar.time, y = N2.obs, color = location)) +
+  geom_point()
+
+# Modeling settings
+modname <- "n2_twostation_nifong"
+specs <- 
+  set_twostation_specs(model_name = modname, verbose = TRUE,
+                       K600_daily_meanlog = 1, K600_daily_sdlog = 0.05,
+                       n_cores = 8, n_chains = 8)
+
+# Model two station
+modelN2 <- run_twostation(data = dielN2, specs = specs, upname = "upstream", 
+                        downname = "downstream")
+
+# Plot comparison of modeled and measured gas
+ggplot(data = model$fit_info$modeled_gas, aes(x = solar.time)) +
+  geom_ribbon(aes(y = DO_mod_down_mean, 
+                  ymin =DO_mod_down_mean -  DO_mod_down_sd,
+                  ymax = DO_mod_down_mean + DO_mod_down_sd, color = "modeled",
+                  fill = "modeled"), alpha = 0.5) +
+  geom_line(aes(y = DO_obs_down, fill = "measured", color = "measured"))
+
+model$fit_info$fit_stats
+
+```
