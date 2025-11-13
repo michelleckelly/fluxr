@@ -23,10 +23,14 @@ convertPressure <- function(barpress, unit){
   if (unit == "bar") {
    barpress_atm <- barpress * 1.01325
   }
+  # kPa to atm
+  if(unit == "kPa") {
+    barpress_atm <- barpress / 101.325
+  }
   # stop message for non-sanctioned unit
-  if (!(unit %in% c("atm", "hPa", "Torr", "psi", "bar", "mmHg", "inHg"))) {
+  if (!(unit %in% c("atm", "hPa", "Torr", "psi", "bar", "mmHg", "inHg", "kPa"))) {
     stop("Please report barometric pressure in units of `atm`, `hPa`, `psi`,
-            `bar`, `mmHg`, or `Torr`.")
+            `bar`, `mmHg`, `kPa`, or `Torr`.")
   }
   return(barpress_atm)
 }
