@@ -22,6 +22,13 @@ runstan_bayes_twostation <- function(data_list, specs){
   # Compare to number of cores specified in set_specs()
   n_cores <- min(tot_cores, ncores)
   
+  # If one day of data, stan will interpret single values as scalars
+  if(length(data_list$d) == 1){
+    data_list$tt <- as.array(data_list$tt)
+    data_list$lag <- as.array(data_list$lag)
+    data_list$n <- as.array(data_list$n)
+  }
+  
   # Tell user how many cores Stan is going to use so they can adjust settings
   # if they want
   if(verbose){message(paste0("\nStan requesting ", n_chains, " chains on ", 

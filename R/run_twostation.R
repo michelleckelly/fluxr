@@ -29,7 +29,7 @@ run_twostation <- function(data, specs, upname = "upstream",
       # Try to fit bayes
       data_list <- prepdata_bayes_twostation(
         data = data, specs = specs, up.name = upname, down.name = downname)
-      9#do.call(runstan_bayes_twostation, c(list(data_list = data_list), specs))
+      #do.call(runstan_bayes_twostation, c(list(data_list = data_list), specs))
       bayes_out <- runstan_bayes_twostation(data_list = data_list, specs = specs)
     }, error = function(err){
       # Currently, returning error & warnings are normal - how I have the 
