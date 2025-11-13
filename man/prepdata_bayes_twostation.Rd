@@ -4,14 +4,14 @@
 \alias{prepdata_bayes_twostation}
 \title{\code{prepdata_bayes_twostation} Prepare two-station data for Bayesian modeling}
 \usage{
-prepdata_bayes_twostation(data, ply_date, specs, up.name, down.name)
+prepdata_bayes_twostation(data, specs, up.name, down.name)
 }
 \arguments{
 \item{data}{Dataset containing columns: \code{solar.time}, \code{location}, \code{DO.obs}, \code{DO.sat}, \code{temp.water}, \code{light}, \code{depth}, \code{tt}, \code{pressure}}
 
-\item{ply_date}{Date to model, YYYY-MM-DD}
-
 \item{specs}{List returned by \code{set_specs()}}
+
+\item{ply_date}{Date to model, YYYY-MM-DD}
 }
 \description{
 \code{prepdata_bayes_twostation} Prepare two-station data for Bayesian modeling
