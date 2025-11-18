@@ -24,7 +24,7 @@ prepdata_bayes_twostation <- function(data, specs, up.name, down.name){
   }
   
   # Check if dates have same number of observations at upstream and downstream sensor
-  if(!all.equal(date_table_up, date_table_down)){
+  if(!identical(date_table_up, date_table_down)){
     stop("upstream and downstream sensor have differing number of observations")
   }
   # Check if each date has same number of observations
