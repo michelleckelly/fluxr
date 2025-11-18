@@ -9,6 +9,7 @@
 #' Default values for N2consume and DN are the same as those in Nifong et al. 
 #' 2020.
 #' 
+#' @export
 set_twostation_specs <- function(
     model_name,
     
