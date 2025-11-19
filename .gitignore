@@ -9,3 +9,4 @@ data/.Rapp.history
 inst/doc
 .Rhistory
 R/.DS_Store
+inst/stan/*.rds
