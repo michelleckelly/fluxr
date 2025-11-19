@@ -6,6 +6,8 @@
 runstan_bayes_twostation <- function(data_list, specs){
   # Pull out model name
   model_name <- data_list$model_name
+  # Get path to where model file is located
+  model_path <- locate_filename_fluxr(specs$model_name)
   
   # Pull settings from specs list
   ncores <- data_list$n_cores
@@ -35,8 +37,7 @@ runstan_bayes_twostation <- function(data_list, specs){
                              n_cores, " of ", tot_cores, " available cores."))}
   
   # Get filepath to compiled & uncompiled stan model
-  model_path <- paste0("inst/stan/", model_name, ".stan")
-  mobj_path <- paste0("inst/stan/", model_name, ".rds")
+  mobj_path <- gsub(".stan$", ".stanrds", model_path)
   
   # Check for existence of compiled model. If model doesn't exist, compile it.
   if(file.exists(mobj_path)){
