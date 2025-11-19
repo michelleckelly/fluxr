@@ -7,6 +7,12 @@
 prepdata_bayes_twostation <- function(data, specs, up.name, down.name){
   # Grab model name from specs
   modname <- specs$model_name
+  
+  # Verify that modname is an accepted model name
+  if(!(modname %in% c("o2_twostation", "n2_twostation"))){
+    stop("model name must be `o2_twostation` or `n2_twostation`")
+  }
+  
   # Glue location names together
   location.names <- c(up.name, down.name)
   
