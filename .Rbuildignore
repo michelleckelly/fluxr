@@ -1,4 +1,3 @@
 ^fluxr\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
-inst/stan/*.rds
