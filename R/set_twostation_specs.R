@@ -16,6 +16,9 @@ set_twostation_specs <- function(
     keep_mcmc = TRUE,
     keep_mcmc_data = TRUE,
     
+    day_start = 4,
+    day_end = 28,
+    
     # Default hyperparameters for non-hierarchial GPP, ER
     GPP_daily_mu = 3.1,
     GPP_daily_lower = -Inf,
@@ -36,7 +39,8 @@ set_twostation_specs <- function(
     # We're not pooling K600 (we only have 1 day of data)
     # Therefore hyperparameters for non-hierarchial K600
     K600_daily_meanlog = log(12),
-    K600_daily_sdlog = 0.05,
+    # For non-pooled K models, default sdlog = 1 in streamMetabolizer
+    K600_daily_sdlog = 1,
     
     # hyperparameters for error terms
     err_obs_iid_sigma_scale = 0.03,
