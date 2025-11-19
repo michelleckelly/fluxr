@@ -1,9 +1,10 @@
 // This Stan program defines a two-station O2 model,
-// as written by Nifong et al. 2020 and available
+// following the structure and error-handling specifications of
+// b_np_oipi_tr_plrckm.stan from streamMetabolizer,
+// with equation structure written by Nifong et al. 2020 and available
 // at github.com/rlnifong/Denitrification/
-// within insst/executables/nn2_model.stan and 
-// rewritten following error-handling specifications of 
-// b_np_oipi_tr_plrckm.stan from streamMetabolizer
+// within insst/executables/nn2_model.stan 
+
 data {
   // parameters of priors on metabolism
   real GPP_daily_mu;
@@ -12,7 +13,7 @@ data {
   real ER_daily_mu;
   real ER_daily_upper;
   real<lower=0> ER_daily_sigma;
-  real<lower=0> K600_daily_meanlog;
+  real K600_daily_meanlog;
   real<lower=0> K600_daily_sdlog;
 
   // error distributions
@@ -21,34 +22,39 @@ data {
   // data dimensions
   int<lower=1> d; // number of dates in time series
   int<lower=1> n24; // max number of observations in 24 hours
-  //int<lower=1> n; // number of observations per date
+  int<lower=1> n; // number of observations per date
+  int<lower=1> lag; // lag on date
+  real<lower=0> tt; // travel time on date
   
   // values that change each day
-  vector[d] tt;
-  array[d] int lag;
-  vector[d] n; // number of non-NA observations on each date
-
-  // data values that change throughout day
-  vector[d] DO_obs_up[n24];
-  vector[d] DO_obs_down[n24];
-  vector[d] DO_sat_up[n24];
-  vector[d] DO_sat_down[n24];
-  vector[d] light_mult_GPP[n24];
-  vector[d] const_mult_ER[n24];
-  vector[d] KO2_conv[n24];
-  vector[d] depth[n24];
-  vector[d] temp[n24];
+  //vector[d] tt;
+  //array[d] int lag;
+  //array[d] int n; // number of observations on date less lag
   
+  // data values that change throughout day
+  vector[d] DO_obs_up[n];
+  vector[d] DO_obs_down[n];
+  vector[d] DO_sat_up[n];
+  vector[d] DO_sat_down[n];
+  vector[d] light_mult_GPP[n];
+  vector[d] const_mult_ER[n];
+  vector[d] KO2_conv[n];
+  vector[d] depth[n];
+  vector[d] temp[n];
 }
-transformed data{
-  int<lower=1> daylag; // Temp holder for each day's lag value
+//transformed data{
+  //int<lower=1> daylag; // Temp holder for each day's lag value
+  //int<lower=1> dayn; // Temp holder for each day's n value
   
   // Grab index start value for day
-  daylag = lag[d] + 1;
+  //daylag = lag[d] + 1;
+  
+  // Grab number of observations on day
+  //dayn = n[d];
   
   // Debugging
-  print("daylag = ", daylag);
-}
+  //print("daylag = ", daylag);
+//}
 
 parameters {
   vector<lower=GPP_daily_lower>[d] GPP_daily;
@@ -60,10 +66,10 @@ parameters {
 
 transformed parameters {
   real<lower=0> err_obs_iid_sigma;
-  vector[d] GPP_inst[n24];
-  vector[d] ER_inst[n24];
-  vector[d] KO2_inst[n24];
-  vector[d] DO_mod_down[n24];
+  vector[d] GPP_inst[n];
+  vector[d] ER_inst[n];
+  vector[d] KO2_inst[n];
+  vector[d] DO_mod_down[n];
   
   // Rescale error distribution parameters
   err_obs_iid_sigma = err_obs_iid_sigma_scale * err_obs_iid_sigma_scaled;
@@ -76,18 +82,14 @@ transformed parameters {
   // * reaeration depends on DO_mod_down
 
   // Calculate individual process rates
-  for (i in daylag:n24) {
+  for (i in 1:n) {
     GPP_inst[i] = GPP_daily .* light_mult_GPP[i];
     ER_inst[i] = ER_daily .* const_mult_ER[i];
     KO2_inst[i] = K600_daily .* KO2_conv[i];
   }
   
   // DO model
-  
-  // Set DO_mod_down values prior to i+lag = DO_obs_down[i:lag] to avoid
-  // NA values in DO_mod_down[i:lag]
-  //DO_mod_down[1+lag] = DO_obs_down[1+lag];
-  for(i in daylag:n24){
+  for(i in 1:n){
     DO_mod_down[i] =
     (
       DO_obs_up[i] +
@@ -99,7 +101,7 @@ transformed parameters {
   }
   
   // Debugging
-  //print("daylag = ", daylag);
+  //print("n = ", n);
   //print("DO_mod_down = ", DO_mod_down);
   //print("GPP_inst = ", GPP_inst);
   //print("ER_inst = ", ER_inst);
@@ -107,7 +109,7 @@ transformed parameters {
 }
 model{
   // IID observation error
-  for(i in daylag:n24){
+  for(i in 1:n){
     DO_obs_down[i] ~ normal(DO_mod_down[i], err_obs_iid_sigma);
   }
   // SD of observation error
@@ -119,24 +121,24 @@ model{
   K600_daily ~ lognormal(K600_daily_meanlog, K600_daily_sdlog);
 }
 generated quantities{
-  vector[d] err_obs_iid[n24];
+  vector[d] err_obs_iid[n];
   vector[d] GPP;
   vector[d] ER;
-  vector[n24-daylag] DO_obs_down_vec; // temporary, needed to reorganize matrix structure
-  vector[n24-daylag] DO_mod_down_vec; // temporary
+  vector[n] DO_obs_down_vec; // temporary, needed to reorganize matrix structure
+  vector[n] DO_mod_down_vec; // temporary
   vector[d] DO_R2;
 
-  for(i in daylag:n24){
+  for(i in 1:n){
     err_obs_iid[i] = DO_mod_down[i] - DO_obs_down[i];
   }
   // for ply, the below loops 1:d
   for(j in 1:d){
-    GPP[j] = sum(GPP_inst[1:n24, j]) / n24;
-    ER[j] = sum(ER_inst[1:n24, j]) / n24;
+    GPP[j] = sum(GPP_inst[1:n, j]) / n;
+    ER[j] = sum(ER_inst[1:n, j]) / n;
     
-    for(i in 1:n24-daylag){
-      DO_mod_down_vec[i] = DO_mod_down[i+daylag,j];
-      DO_obs_down_vec[i] = DO_obs_down[i+daylag,j];
+    for(i in 1:n){
+      DO_mod_down_vec[i] = DO_mod_down[i,j];
+      DO_obs_down_vec[i] = DO_obs_down[i,j];
     }
     
     // R2 for DO = difference between observed and modeled DO down

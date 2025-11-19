@@ -47,10 +47,11 @@ run_twostation <- function(data, specs, upname = "upstream",
     date = as.Date(unique(data$date)),
     date_index = seq_len(data_list$d)
   )
+  
   datetime_df <- tibble::tibble(
-    solar.time = unique(data$solar.time),
-    date_index = rep(seq_len(data_list$d), each = data_list$n24),
-    time_index = rep(seq_len(data_list$n24), times = data_list$d)) %>%
+    solar.time = unique(data$solar.time)[(data_list$lag+1):(data_list$lag+data_list$n)],
+    date_index = rep(seq_len(data_list$d), each = data_list$n),
+    time_index = rep(seq_len(data_list$n), times = data_list$d)) %>%
     left_join(date_df, by = "date_index")
   
   # Skipping some safety checks/error handling here. Being dangerous
@@ -69,9 +70,6 @@ run_twostation <- function(data, specs, upname = "upstream",
     select(date, solar.time, everything()) 
   
   if(return_fit){
-    bayes_allday$inst
-    data_list
-    
     # Pull rhat and R2 values
     dayfits <- 
       data.frame(date = bayes_allday$daily$date,
