@@ -36,6 +36,14 @@ set_twostation_specs <- function(
     DN_daily_upper = Inf,
     DN_daily_sigma = 5,
     
+    # Default hyperparameters for N2other, Nfix
+    N2other_daily_mu = -1,
+    N2other_daily_lower = -Inf,
+    N2other_daily_sigma = 5,
+    Nfix_daily_mu = -1,
+    Nfix_daily_lower = -Inf,
+    Nfix_daily_sigma = 5,
+    
     # We're not pooling K600 (we only have 1 day of data)
     # Therefore hyperparameters for non-hierarchial K600
     K600_daily_meanlog = log(12),
@@ -111,24 +119,45 @@ set_twostation_specs <- function(
   if(str_detect(model_name, "n2_twostation")){
     
     params_in <- 
-      c(params_in, 
-        "N2consume_daily_mu", "N2consume_daily_lower", "N2consume_daily_sigma",
-        "DN_daily_mu", "DN_daily_upper", "DN_daily_sigma")
-    
+      c(params_in, "DN_daily_mu", "DN_daily_upper", "DN_daily_sigma")
     params_out <-
-      c(params_out,
-        "N2consume", "DN", "N2_R2", "N2consume_daily", "DN_daily", 
-        "KN2_inst", "N2_mod_down", "N2consume_inst", "DN_inst")
+      c(params_out, "DN", "N2_R2",  "DN_daily", "KN2_inst", 
+        "N2_mod_down", "DN_inst")
     
     specsList$params_in <- params_in
-    specsList$params_out <- params_out
     
-    specsList$N2consume_daily_mu <- N2consume_daily_mu
-    specsList$N2consume_daily_lower <- N2consume_daily_lower
-    specsList$N2consume_daily_sigma <- N2consume_daily_sigma
     specsList$DN_daily_mu <- DN_daily_mu
     specsList$DN_daily_upper <- DN_daily_upper
     specsList$DN_daily_sigma <- DN_daily_sigma
+    
+    if(model_name == "n2_twostation_nifong"){
+      params_in <-
+        c("N2consume_daily_mu", "N2consume_daily_lower", "N2consume_daily_sigma")
+      params_out <- 
+        c(params_out, "N2consume", "N2consume_daily", "N2consume_inst")
+      
+      specsList$N2consume_daily_mu <- N2consume_daily_mu
+      specsList$N2consume_daily_lower <- N2consume_daily_lower
+      specsList$N2consume_daily_sigma <- N2consume_daily_sigma
+    }
+    if(model_name == "n2_twostation_light-independent-N2other"){
+      params_in <-
+        c("N2other_daily_mu", "N2other_daily_lower", "N2other_daily_sigma",
+          "Nfix_daily_mu", "Nfix_daily_lower", "Nfix_daily_sigma")
+      params_out <- 
+        c(params_out, "N2other", "N2other_daily", "N2other_inst",
+          "Nfix", "Nfix_daily", "Nfix_inst")
+      
+      specsList$N2other_daily_mu <- N2other_daily_mu
+      specsList$N2other_daily_lower <- N2other_daily_lower
+      specsList$N2other_daily_sigma <- N2other_daily_sigma
+      specsList$Nfix_daily_mu <- Nfix_daily_mu
+      specsList$Nfix_daily_lower <- Nfix_daily_lower
+      specsList$Nfix_daily_sigma <- Nfix_daily_sigma
+    }
+    
+    specsList$params_out <- params_out
+    
   }
   
   return(specsList)
