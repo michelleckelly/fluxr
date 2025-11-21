@@ -18,5 +18,6 @@ locate_filename_fluxr <- function(model_name) {
   if(file.exists(package_path)) return(package_path)
   if(file.exists(other_path)) return(other_path)
   
-  stop("could not locate the model file at ", file.path(package_dir, model_name), " or ", other_path) 
+  #message("could not locate the model file at ", file.path(package_dir, model_name), " or ", other_path) 
+  return(paste0(package_dir, "/", other_path))
 }
