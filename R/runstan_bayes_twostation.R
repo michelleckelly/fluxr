@@ -48,6 +48,7 @@ runstan_bayes_twostation <- function(data_list, specs){
     start.time <- Sys.time()
     # If file doesn't exist, compile model
     if(verbose){message(paste0("\nCompiling ", model_name, ".stan model..."))}
+    model_path <- gsub(".rds$", ".stan", model_path)
     rstan::stan_model(file = model_path, model_name = model_name, 
                       auto_write = TRUE, warn_pedantic = TRUE, 
                       warn_uninitialized = TRUE)
