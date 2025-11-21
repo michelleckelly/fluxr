@@ -49,7 +49,7 @@ run_twostation <- function(data, specs, upname = "upstream",
   )
   
   datetime_df <- tibble::tibble(
-    solar.time = unique(data$solar.time)[(data_list$lag+1):(data_list$lag+data_list$n)],
+    solar.time = unique(data$solar.time)[(1+data_list$lag):(data_list$lag + data_list$n)],
     date_index = rep(seq_len(data_list$d), each = data_list$n),
     time_index = rep(seq_len(data_list$n), times = data_list$d)) %>%
     left_join(date_df, by = "date_index")
