@@ -133,8 +133,8 @@ generated quantities{
   }
   // for ply, the below loops 1:d
   for(j in 1:d){
-    GPP[j] = sum(GPP_inst[1:n, j]) / n;
-    ER[j] = sum(ER_inst[1:n, j]) / n;
+    GPP[j] = sum(GPP_inst[1:n, j]) / n24;
+    ER[j] = sum(ER_inst[1:n, j]) / n24;
     
     for(i in 1:n){
       DO_mod_down_vec[i] = DO_mod_down[i,j];
